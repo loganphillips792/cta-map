@@ -75,11 +75,16 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.DOCKERHUB_USERNAME }}/cta-map
+          tags: latest
+      - name: Show Docker metadata outputs
+        run: |
+          echo "Tags: ${{ steps.meta.outputs.tags }}"
+          echo "Labels: ${{ steps.meta.outputs.labels }}"
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: Docker/Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ env.DOCKERHUB_USERNAME }}/cta-map:latest
           labels: ${{ steps.meta.outputs.labels }}
