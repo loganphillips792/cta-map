@@ -1,1 +1,17 @@
 # cta-map
+
+## Docker usage
+
+Build the production container image from the repo root:
+
+```bash
+docker build -t cta-map -f Docker/Dockerfile .
+```
+
+Then run it locally and expose the app on port 8080:
+
+```bash
+docker run --rm -p 8080:80 cta-map
+```
+
+Visit `http://localhost:8080` to verify the Vite build is being served by nginx from the Docker image.
