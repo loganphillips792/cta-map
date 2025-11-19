@@ -1,5 +1,5 @@
 :root {
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Open Sans', 'Helvetica Neue', Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
   color: #0f172a;
@@ -8,6 +8,9 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-optical-sizing: auto;
+  font-style: normal;
+  font-variation-settings: 'wdth' 100;
 }
 
 *,
@@ -20,4 +23,14 @@ body {
   margin: 0;
   min-height: 100vh;
   background: #e2e8f0;
+}
+
+body,
+button,
+input,
+select,
+textarea {
+  /* https://stackoverflow.com/questions/6520689/font-family-is-not-inherited-to-the-form-input-fields */
+  /* inherit from :root/ */
+  font-family:inherit;
 }
