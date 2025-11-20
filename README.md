@@ -1,5 +1,10 @@
 # cta-map
 
+# Running application
+
+cd frontend/cta-map
+npm run dev
+
 ## Docker usage
 
 Build the production container image from the repo root:
