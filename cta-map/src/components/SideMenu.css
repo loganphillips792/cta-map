@@ -111,6 +111,27 @@
   color: #ffffff;
 }
 
+.side-menu__clear-selected {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #cbd6f3;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.side-menu__clear-selected:hover,
+.side-menu__clear-selected:focus-visible {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
 .side-menu__section ul {
   list-style: none;
   margin: 0;

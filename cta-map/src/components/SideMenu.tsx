@@ -5,6 +5,7 @@ import {
   Heart,
   HeartPlus,
   LocateFixed,
+  Minus,
   PanelLeftClose,
   PanelLeftOpen,
   Route,
@@ -14,15 +15,26 @@ import {
   UserRound,
 } from 'lucide-react'
 import './SideMenu.css'
+import { FAVORITES_STORAGE_KEY } from '../constants/storageKeys'
 
 export type DisplayToggleId = 'location' | 'allRoutes' | 'favoriteRoutes'
 export type DisplayToggleState = Record<DisplayToggleId, boolean>
+export type RouteListItem = {
+  id: string
+  name: string
+}
 
 type SideMenuProps = {
   isOpen: boolean
   onToggle: () => void
   displayToggles: DisplayToggleState
   onDisplayToggleChange: (id: DisplayToggleId) => void
+  onFavoritesChange?: (ids: string[]) => void
+  activeRouteIds: string[]
+  onActiveRouteToggle: (id: string) => void
+  onClearActiveRoutes?: () => void
+  routes?: RouteListItem[]
+  allRoutesCount?: number | null
 }
 
 type DisplayOption = {
@@ -52,26 +64,34 @@ const displayOptionsConfig: DisplayOption[] = [
   },
 ]
 
-const allRoutes = [
-  { id: '3', name: '3 - King Drive', icon: routeIcon },
-  { id: '6', name: '6 - Jackson Park Express', icon: routeIcon },
-  { id: '8', name: '8 - Halsted', icon: routeIcon },
-  { id: '9', name: '9 - Ashland', icon: routeIcon },
-  { id: '22', name: '22 - Clark', icon: routeIcon },
-  { id: '29', name: '29 - State', icon: routeIcon },
-  { id: '36', name: '36 - Broadway', icon: routeIcon },
-  { id: '49', name: '49 - Western', icon: routeIcon },
-  { id: '53', name: '53 - Pulaski', icon: routeIcon },
-  { id: '55', name: '55 - Garfield', icon: routeIcon },
-  { id: '60', name: '60 - Blue Island/26th', icon: routeIcon },
-  { id: '66', name: '66 - Chicago', icon: routeIcon },
-  { id: '151', name: '151 - Sheridan', icon: routeIcon },
+const fallbackRoutes: RouteListItem[] = [
+  { id: '3', name: '3 - King Drive' },
+  { id: '6', name: '6 - Jackson Park Express' },
+  { id: '8', name: '8 - Halsted' },
+  { id: '9', name: '9 - Ashland' },
+  { id: '22', name: '22 - Clark' },
+  { id: '29', name: '29 - State' },
+  { id: '36', name: '36 - Broadway' },
+  { id: '49', name: '49 - Western' },
+  { id: '53', name: '53 - Pulaski' },
+  { id: '55', name: '55 - Garfield' },
+  { id: '60', name: '60 - Blue Island/26th' },
+  { id: '66', name: '66 - Chicago' },
+  { id: '151', name: '151 - Sheridan' },
 ]
 
-const FAVORITES_STORAGE_KEY = 'cta-map-favorite-routes'
-const ACTIVE_ROUTES_STORAGE_KEY = 'cta-map-active-routes'
-
-const SideMenu = ({ isOpen, onToggle, displayToggles, onDisplayToggleChange }: SideMenuProps) => {
+const SideMenu = ({
+  isOpen,
+  onToggle,
+  displayToggles,
+  onDisplayToggleChange,
+  onFavoritesChange,
+  activeRouteIds,
+  onActiveRouteToggle,
+  onClearActiveRoutes,
+  routes,
+  allRoutesCount,
+}: SideMenuProps) => {
   const [searchQuery, setSearchQuery] = useState('')
   const [favorites, setFavorites] = useState<Set<string>>(() => {
     if (typeof window === 'undefined') return new Set(['8'])
@@ -91,32 +111,19 @@ const SideMenu = ({ isOpen, onToggle, displayToggles, onDisplayToggleChange }: S
 
   const [isFavoritesOpen, setIsFavoritesOpen] = useState(true)
   const [isAllRoutesOpen, setIsAllRoutesOpen] = useState(true)
-  const [activeRouteIds, setActiveRouteIds] = useState<string[]>(() => {
-    if (typeof window === 'undefined') return []
-    try {
-      const stored = window.localStorage.getItem(ACTIVE_ROUTES_STORAGE_KEY)
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        if (Array.isArray(parsed)) {
-          return parsed
-        }
-      }
-    } catch {
-      // ignore parse errors and fall back to default
-    }
-    return []
-  })
+
+  const availableRoutes = routes && routes.length > 0 ? routes : fallbackRoutes
 
   const filteredRoutes = useMemo(() => {
-    if (!searchQuery.trim()) return allRoutes
-    return allRoutes.filter((route) =>
+    if (!searchQuery.trim()) return availableRoutes
+    return availableRoutes.filter((route) =>
       route.name.toLowerCase().includes(searchQuery.toLowerCase()),
     )
-  }, [searchQuery])
+  }, [searchQuery, availableRoutes])
 
   const favoriteRoutes = useMemo(
-    () => allRoutes.filter((route) => favorites.has(route.id)),
-    [favorites],
+    () => availableRoutes.filter((route) => favorites.has(route.id)),
+    [favorites, availableRoutes],
   )
 
   const activeRouteSet = useMemo(() => new Set(activeRouteIds), [activeRouteIds])
@@ -130,9 +137,10 @@ const SideMenu = ({ isOpen, onToggle, displayToggles, onDisplayToggleChange }: S
   }, [favorites])
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    window.localStorage.setItem(ACTIVE_ROUTES_STORAGE_KEY, JSON.stringify(activeRouteIds))
-  }, [activeRouteIds])
+    if (onFavoritesChange) {
+      onFavoritesChange(Array.from(favorites))
+    }
+  }, [favorites, onFavoritesChange])
 
   const toggleFavorite = (routeId: string) => {
     setFavorites((prev) => {
@@ -147,9 +155,7 @@ const SideMenu = ({ isOpen, onToggle, displayToggles, onDisplayToggleChange }: S
   }
 
   const toggleActiveRoute = (routeId: string) => {
-    setActiveRouteIds((prev) =>
-      prev.includes(routeId) ? prev.filter((id) => id !== routeId) : [...prev, routeId],
-    )
+    onActiveRouteToggle(routeId)
   }
 
   return (
@@ -179,30 +185,47 @@ const SideMenu = ({ isOpen, onToggle, displayToggles, onDisplayToggleChange }: S
         <section className="side-menu__section">
           <h2>Display options</h2>
           <ul>
-            {displayOptionsConfig.map((option) => (
-              <li key={option.id}>
-                <button
-                  type="button"
-                  className="side-menu__toggle"
-                  onClick={() => onDisplayToggleChange(option.id)}
-                  aria-pressed={displayToggles[option.id]}
-                >
-                  <span className="side-menu__toggle-icon">{option.icon}</span>
-                  <span className="side-menu__toggle-label">{option.label}</span>
-                  <span
-                    className={`side-menu__switch ${displayToggles[option.id] ? 'is-on' : ''}`}
-                    aria-hidden="true"
+            {displayOptionsConfig.map((option) => {
+              const isBlocked =
+                (option.id === 'allRoutes' && displayToggles.favoriteRoutes) ||
+                (option.id === 'favoriteRoutes' && displayToggles.allRoutes)
+              return (
+                <li key={option.id}>
+                  <button
+                    type="button"
+                    className="side-menu__toggle"
+                    onClick={() => onDisplayToggleChange(option.id)}
+                    aria-pressed={displayToggles[option.id]}
+                    disabled={isBlocked}
                   >
-                    <span className="side-menu__switch-thumb" />
-                  </span>
-                </button>
-              </li>
-            ))}
+                    <span className="side-menu__toggle-icon">{option.icon}</span>
+                    <span className="side-menu__toggle-label">{option.label}</span>
+                    <span
+                      className={`side-menu__switch ${displayToggles[option.id] ? 'is-on' : ''}`}
+                      aria-hidden="true"
+                    >
+                      <span className="side-menu__switch-thumb" />
+                    </span>
+                  </button>
+                </li>
+              )
+            })}
           </ul>
         </section>
 
         <p className="side-menu__selected-routes" aria-live="polite">
           Selected routes <span>{activeRouteIds.length}</span>
+          {onClearActiveRoutes && activeRouteIds.length > 0 && (
+            <button
+              type="button"
+              className="side-menu__clear-selected"
+              onClick={onClearActiveRoutes}
+              aria-label="Deselect all selected routes"
+              title="Deselect all selected routes"
+            >
+              <Minus aria-hidden="true" focusable="false" />
+            </button>
+          )}
         </p>
 
         <section className="side-menu__section">
@@ -228,7 +251,7 @@ const SideMenu = ({ isOpen, onToggle, displayToggles, onDisplayToggleChange }: S
                     aria-pressed={activeRouteSet.has(route.id)}
                     onClick={() => toggleActiveRoute(route.id)}
                   >
-                    <span className="side-menu__route-icon">{route.icon}</span>
+                    <span className="side-menu__route-icon">{routeIcon}</span>
                     <span className="side-menu__route-label">{route.name}</span>
                    <span
                       className={`side-menu__favorite ${favorites.has(route.id) ? 'is-active' : ''}`}
@@ -253,6 +276,9 @@ const SideMenu = ({ isOpen, onToggle, displayToggles, onDisplayToggleChange }: S
         <section className="side-menu__section">
           <div className="side-menu__section-heading side-menu__section-heading--collapsible">
             <h2>All routes</h2>
+            <span className="side-menu__section-pill">
+              {typeof allRoutesCount === 'number' ? allRoutesCount : '...'}
+            </span>
             <button
               type="button"
               className={`side-menu__collapse-toggle ${isAllRoutesOpen ? 'is-open' : ''}`}
@@ -273,7 +299,7 @@ const SideMenu = ({ isOpen, onToggle, displayToggles, onDisplayToggleChange }: S
                       aria-pressed={activeRouteSet.has(route.id)}
                       onClick={() => toggleActiveRoute(route.id)}
                     >
-                      <span className="side-menu__route-icon">{route.icon}</span>
+                      <span className="side-menu__route-icon">{routeIcon}</span>
                       <span className="side-menu__route-label">{route.name}</span>
                      <span
                         className={`side-menu__favorite ${favorites.has(route.id) ? 'is-active' : ''}`}
