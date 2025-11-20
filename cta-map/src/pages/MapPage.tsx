@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import type { LatLngBoundsExpression, LatLngTuple } from 'leaflet'
+import { useEffect, useRef, useState } from 'react'
+import type { LatLngBoundsExpression, LatLngTuple, Map as LeafletMap } from 'leaflet'
 import {
   MapContainer,
   Marker,
@@ -9,7 +9,7 @@ import {
   useMap,
 } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
-import { PanelLeftOpen } from 'lucide-react'
+import { Navigation, PanelLeftOpen } from 'lucide-react'
 import SideMenu, { type DisplayToggleId, type DisplayToggleState } from '../components/SideMenu'
 
 const chicago = { lat: 41.8781, lng: -87.6298 }
@@ -55,6 +55,7 @@ const TOGGLES_STORAGE_KEY = 'cta-map-display-toggles'
 const MapPage = () => {
   const [userPosition, setUserPosition] = useState<LatLngTuple | null>(null)
   const [isMenuOpen, setIsMenuOpen] = useState(true)
+  const mapRef = useRef<LeafletMap | null>(null)
   const [displayToggles, setDisplayToggles] = useState<DisplayToggleState>(() => {
     if (typeof window === 'undefined') return defaultToggleState
     try {
@@ -95,6 +96,11 @@ const MapPage = () => {
     setDisplayToggles((prev) => ({ ...prev, [id]: !prev[id] }))
   }
 
+  const handleCenterOnUser = () => {
+    if (!mapRef.current || !displayToggles.location || !userPosition) return
+    mapRef.current.flyTo(userPosition, Math.max(mapRef.current.getZoom(), 14), { animate: true })
+  }
+
   return (
     <main className="map-page">
       <div className={`map-page__sidebar ${isMenuOpen ? 'is-open' : ''}`}>
@@ -118,11 +124,13 @@ const MapPage = () => {
           </button>
         )}
         <MapContainer
+          ref={mapRef}
           center={chicago}
           zoom={12}
           maxZoom={18}
           className="map-page__map"
           scrollWheelZoom
+          zoomControl={false}
         >
           <ChicagoBoundsLock />
           <TileLayer
@@ -138,6 +146,16 @@ const MapPage = () => {
           />
           {userPosition && displayToggles.location && <UserLocationMarker position={userPosition} />}
         </MapContainer>
+        <button
+          type="button"
+          className="map-page__locate-button"
+          onClick={handleCenterOnUser}
+          disabled={!displayToggles.location || !userPosition}
+          aria-label="Center map on my location"
+          title="Center map on my location"
+        >
+          <Navigation aria-hidden="true" focusable="false" />
+        </button>
       </div>
     </main>
   )
