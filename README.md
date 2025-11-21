@@ -22,8 +22,17 @@ docker run --rm -p 8080:80 cta-map
 Visit `http://localhost:8080` to verify the Vite build is being served by nginx from the Docker image.
 
 
+Run UI Tests:
+
+1. `cd cta-map/frontend/cta-map`
+2. `npm run test:e2e `
+
 # Data
 
 [CTA Developer Center: Bus Tracker API - CTA](https://www.transitchicago.com/developers/bustracker/)
 
 [Open Data from the CTA - CTA](https://www.transitchicago.com/data/)
+
+# TODO
+
+- Add playwright to pipeline

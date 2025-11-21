@@ -214,7 +214,7 @@ const SideMenu = ({
         </section>
 
         <p className="side-menu__selected-routes" aria-live="polite">
-          Selected routes <span>{activeRouteIds.length}</span>
+          Selected routes <span data-testid="selected-routes-count">{activeRouteIds.length}</span>
           {onClearActiveRoutes && activeRouteIds.length > 0 && (
             <button
               type="button"
@@ -231,7 +231,9 @@ const SideMenu = ({
         <section className="side-menu__section">
           <div className="side-menu__section-heading side-menu__section-heading--collapsible">
             <h2>Favorites</h2>
-            <span className="side-menu__section-pill">{favoriteRoutes.length}</span>
+            <span className="side-menu__section-pill" data-testid="favorites-count">
+              {favoriteRoutes.length}
+            </span>
             <button
               type="button"
               className={`side-menu__collapse-toggle ${isFavoritesOpen ? 'is-open' : ''}`}
@@ -242,7 +244,7 @@ const SideMenu = ({
             </button>
           </div>
           {isFavoritesOpen && (
-            <ul>
+            <ul data-testid="favorites-list">
               {favoriteRoutes.map((route) => (
                 <li key={route.id}>
                   <button
@@ -250,15 +252,19 @@ const SideMenu = ({
                     className={`side-menu__route ${activeRouteSet.has(route.id) ? 'is-active' : ''}`}
                     aria-pressed={activeRouteSet.has(route.id)}
                     onClick={() => toggleActiveRoute(route.id)}
+                    data-testid="route-button"
+                    data-route-id={route.id}
                   >
                     <span className="side-menu__route-icon">{routeIcon}</span>
                     <span className="side-menu__route-label">{route.name}</span>
-                   <span
+                    <span
                       className={`side-menu__favorite ${favorites.has(route.id) ? 'is-active' : ''}`}
                       onClick={(event) => {
                         event.stopPropagation()
                         toggleFavorite(route.id)
                       }}
+                      data-testid="favorite-toggle"
+                      data-route-id={route.id}
                     >
                       {favorites.has(route.id) ? (
                         <Heart aria-hidden="true" focusable="false" />
@@ -290,7 +296,7 @@ const SideMenu = ({
           </div>
           {isAllRoutesOpen && (
             <div className="side-menu__routes-list" role="region" aria-label="All CTA routes">
-              <ul>
+              <ul data-testid="all-routes-list">
                 {filteredRoutes.map((route) => (
                   <li key={route.id}>
                     <button
@@ -298,15 +304,19 @@ const SideMenu = ({
                       className={`side-menu__route ${activeRouteSet.has(route.id) ? 'is-active' : ''}`}
                       aria-pressed={activeRouteSet.has(route.id)}
                       onClick={() => toggleActiveRoute(route.id)}
+                      data-testid="route-button"
+                      data-route-id={route.id}
                     >
                       <span className="side-menu__route-icon">{routeIcon}</span>
                       <span className="side-menu__route-label">{route.name}</span>
-                     <span
+                      <span
                         className={`side-menu__favorite ${favorites.has(route.id) ? 'is-active' : ''}`}
                         onClick={(event) => {
                           event.stopPropagation()
                           toggleFavorite(route.id)
                         }}
+                        data-testid="favorite-toggle"
+                        data-route-id={route.id}
                       >
                         {favorites.has(route.id) ? (
                           <Heart aria-hidden="true" focusable="false" />

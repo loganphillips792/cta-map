@@ -25,3 +25,6 @@ dist-ssr
 
 # vite
 .vite
+
+# playwright
+test-results/
