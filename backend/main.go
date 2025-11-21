@@ -18,6 +18,10 @@ func main() {
 	e.HideBanner = true
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"*"},
+		AllowMethods: []string{http.MethodGet, http.MethodOptions},
+	}))
 
 	if err := godotenv.Load(); err != nil {
 		var pathErr *fs.PathError
