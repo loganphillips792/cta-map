@@ -3,6 +3,7 @@
 # Running application
 
 cd frontend/cta-map
+add jawg.io token to .env file
 npm run dev
 
 ## Docker usage
