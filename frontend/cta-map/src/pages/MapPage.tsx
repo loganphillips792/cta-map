@@ -31,6 +31,8 @@ const chicagoBounds: LatLngBoundsExpression = [
   [42.05, -87.45],
 ]
 
+const jawgAccessToken = import.meta.env.VITE_JAWG_ACCESS_TOKEN
+
 const ChicagoBoundsLock = () => {
   const map = useMap()
   const hasInitialized = useRef(false)
@@ -436,8 +438,18 @@ const MapPage = () => {
         >
           <ChicagoBoundsLock />
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution={
+              jawgAccessToken
+                ? '<a href="https://jawg.io" title="Tiles Courtesy of Jawg Maps" target="_blank">&copy; <b>Jawg</b>Maps</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }
+            url={
+              jawgAccessToken
+                ? `https://tile.jawg.io/jawg-streets/{z}/{x}/{y}{r}.png?access-token=${jawgAccessToken}`
+                : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+            }
+            minZoom={0}
+            maxZoom={22}
           />
           <Marker position={chicago}>
             <Popup>Chicago Transit Authority</Popup>
