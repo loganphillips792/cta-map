@@ -28,3 +28,6 @@ dist-ssr
 
 # playwright
 test-results/
+
+# .env
+.env
