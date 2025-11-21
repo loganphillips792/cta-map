@@ -41,6 +41,13 @@ type ctaRoutesResponse struct {
 	BustimeResponse ctaBustimeResponse `json:"bustime-response"`
 }
 
+type route struct {
+	RouteNumber string `json:"routeNumber"`
+	RouteName   string `json:"routeName"`
+	RouteColor  string `json:"routeColor"`
+	Rtdd        string `json:"rtdd"`
+}
+
 func main() {
 	e := echo.New()
 	e.HideBanner = true
@@ -99,7 +106,17 @@ func main() {
 			return c.JSON(http.StatusBadGateway, routesResp.BustimeResponse)
 		}
 
-		return c.JSON(http.StatusOK, routesResp.BustimeResponse.Routes)
+		routes := make([]route, 0, len(routesResp.BustimeResponse.Routes))
+		for _, r := range routesResp.BustimeResponse.Routes {
+			routes = append(routes, route{
+				RouteNumber: r.Rt,
+				RouteName:   r.Rtnm,
+				RouteColor:  r.Rtclr,
+				Rtdd:        r.Rtdd,
+			})
+		}
+
+		return c.JSON(http.StatusOK, routes)
 	})
 
 	port := os.Getenv("PORT")
