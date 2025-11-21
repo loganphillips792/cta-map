@@ -134,3 +134,28 @@
   width: 24px;
   height: 24px;
 }
+
+.vehicle-icon {
+  display: grid;
+  place-items: center;
+}
+
+.vehicle-icon__circle {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+  display: grid;
+  place-items: center;
+}
+
+.vehicle-icon__arrow {
+  color: #ffffff;
+  font-size: 12px;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  transform: translateY(-1px) rotate(var(--heading, 0deg));
+  display: inline-block;
+}

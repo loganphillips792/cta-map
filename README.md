@@ -2,9 +2,12 @@
 
 # Running application
 
-cd frontend/cta-map
-add jawg.io token to .env file
-npm run dev
+1. `cd frontend/cta-map`
+2. add jawg.io token to .env file
+3. `npm run dev`
+4. `cd backend`
+5. add CTA_API_KEY to .env file
+6. `npm run dev`
 
 ## Docker usage
 

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { LatLngBoundsExpression, LatLngTuple, Map as LeafletMap } from 'leaflet'
+import L, { type LatLngBoundsExpression, type LatLngTuple, type Map as LeafletMap } from 'leaflet'
 import {
   MapContainer,
   GeoJSON,
@@ -24,6 +24,7 @@ import {
   FAVORITES_STORAGE_KEY,
   TOGGLES_STORAGE_KEY,
 } from '../constants/storageKeys'
+import { useRoutesQuery, useVehiclesQuery } from '../hooks/ctaQueries'
 
 const chicago = { lat: 41.8781, lng: -87.6298 }
 const chicagoBounds: LatLngBoundsExpression = [
@@ -56,6 +57,8 @@ const UserLocationMarker = ({ position }: { position: LatLngTuple }) => {
 }
 
 type BusRouteFeatureCollection = FeatureCollection<LineString | MultiLineString>
+
+type RouteListItemWithColor = RouteListItem & { color?: string | null }
 
 const busRoutesKmzUrl = new URL('../../data/CTA_BusRoutes.kmz', import.meta.url).href
 
@@ -147,9 +150,9 @@ const extractRouteNamesFromKml = (kmlDom: Document) => {
   return lookup
 }
 
-const makeRandomRouteColor = () => {
-  const hue = Math.floor(Math.random() * 360)
-  return `hsl(${hue}, 80%, 55%)`
+const makeRouteColorFromApi = (routeId: string, routes: RouteListItemWithColor[]) => {
+  const match = routes.find((r) => r.id === routeId)
+  return match?.color ?? '#2e7d32'
 }
 
 const MapPage = () => {
@@ -175,6 +178,8 @@ const MapPage = () => {
   const [activeRouteIds, setActiveRouteIds] = useState<string[]>(() =>
     getStoredRouteIds(ACTIVE_ROUTES_STORAGE_KEY),
   )
+  const routesQuery = useRoutesQuery()
+  const vehiclesQuery = useVehiclesQuery(activeRouteIds)
 
   type RouteId = string
   type RouteColor = string
@@ -182,9 +187,12 @@ const MapPage = () => {
 
   const [routeColors, setRouteColors] = useState<RouteColorMap>({})
   const [busRoutesData, setBusRoutesData] = useState<BusRouteFeatureCollection | null>(null)
-  const [isLoadingRoutes, setIsLoadingRoutes] = useState(false)
-  const [routesError, setRoutesError] = useState<string | null>(null)
-  const routesRequestId = useRef(0)
+  const [isLoadingRouteShapes, setIsLoadingRouteShapes] = useState(false)
+  const [routeShapesError, setRouteShapesError] = useState<string | null>(null)
+  const routeShapesRequestId = useRef(0)
+  const vehicles = vehiclesQuery.data ?? []
+  const routeListError = routesQuery.error instanceof Error ? routesQuery.error.message : null
+  const vehiclesError = vehiclesQuery.error instanceof Error ? vehiclesQuery.error.message : null
 
   useEffect(() => {
     if (!navigator.geolocation) {
@@ -249,12 +257,12 @@ const MapPage = () => {
     if (busRoutesData) return
 
     const abortController = new AbortController()
-    const requestId = routesRequestId.current + 1
-    routesRequestId.current = requestId
+    const requestId = routeShapesRequestId.current + 1
+    routeShapesRequestId.current = requestId
 
     const loadRoutes = async () => {
-      setRoutesError(null)
-      setIsLoadingRoutes(true)
+      setRouteShapesError(null)
+      setIsLoadingRouteShapes(true)
       try {
         const response = await fetch(busRoutesKmzUrl, { signal: abortController.signal })
         if (!response.ok) throw new Error('Failed to download CTA routes')
@@ -288,16 +296,16 @@ const MapPage = () => {
             return feature
           }),
         }
-        if (!abortController.signal.aborted && routesRequestId.current === requestId) {
+        if (!abortController.signal.aborted && routeShapesRequestId.current === requestId) {
           setBusRoutesData(enrichedGeoJson)
         }
       } catch (error) {
         if (abortController.signal.aborted) return
         console.error('Failed to load CTA bus routes', error)
-        setRoutesError('Unable to load CTA bus routes right now.')
+        setRouteShapesError('Unable to load CTA bus routes right now.')
       } finally {
-        if (!abortController.signal.aborted && routesRequestId.current === requestId) {
-          setIsLoadingRoutes(false)
+        if (!abortController.signal.aborted && routeShapesRequestId.current === requestId) {
+          setIsLoadingRouteShapes(false)
         }
       }
     }
@@ -309,23 +317,18 @@ const MapPage = () => {
     }
   }, [activeRouteIds.length, allRoutes, favoriteRoutes, busRoutesData])
 
-  const routeSummaries = useMemo<RouteListItem[]>(() => {
-    if (!busRoutesData) return []
-    const seen = new Set<string>()
-    return busRoutesData.features
-      .reduce<RouteListItem[]>((acc, feature) => {
-        const id = getRouteIdFromFeature(feature)
-        if (!id || seen.has(id)) return acc
-        const friendlyName = getRouteNameFromFeature(feature)
-        acc.push({
-          id,
-          name: friendlyName ? `${id} - ${friendlyName}` : id,
-        })
-        seen.add(id)
-        return acc
-      }, [])
+  const routeSummaries = useMemo<RouteListItemWithColor[]>(() => {
+    const apiRoutes = routesQuery.data ?? []
+    if (apiRoutes.length === 0) return []
+
+    return apiRoutes
+      .map((route) => ({
+        id: route.routeNumber,
+        name: route.routeName ? `${route.routeNumber} - ${route.routeName}` : route.routeNumber,
+        color: route.routeColor,
+      }))
       .sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }))
-  }, [busRoutesData])
+  }, [routesQuery.data])
 
   const favoriteRouteSet = useMemo(() => new Set(favoriteRouteIds), [favoriteRouteIds])
   const activeRouteSet = useMemo(() => new Set(activeRouteIds), [activeRouteIds])
@@ -376,7 +379,7 @@ const MapPage = () => {
       const activeSet = new Set(activeRouteIds)
       activeRouteIds.forEach((id) => {
         if (!next[id]) {
-          next[id] = makeRandomRouteColor()
+          next[id] = makeRouteColorFromApi(id, routeSummaries)
           changed = true
         }
       })
@@ -388,7 +391,25 @@ const MapPage = () => {
       })
       return changed ? next : prev
     })
-  }, [activeRouteIds])
+  }, [activeRouteIds, routeSummaries])
+
+  const getVehicleIcon = useCallback(
+    (routeId: string, heading: string) => {
+      const numericHeading = Number(heading)
+      const headingValue = Number.isFinite(numericHeading) ? numericHeading : 0
+      const color = routeColors[routeId] ?? '#1e88e5'
+
+      return L.divIcon({
+        className: 'vehicle-icon',
+        html: `<div class="vehicle-icon__circle" style="background:${color};--heading:${headingValue}deg">
+                <span class="vehicle-icon__arrow">▲</span>
+               </div>`,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+      })
+    },
+    [routeColors],
+  )
 
   // Keep map position unless user explicitly chooses to center; avoid auto-flying on every selection change.
 
@@ -412,10 +433,18 @@ const MapPage = () => {
         />
       </div>
       <div className="map-page__map-wrapper">
-        {isLoadingRoutes && (allRoutes || favoriteRoutes) && (
+        {(isLoadingRouteShapes || routesQuery.isLoading) && (allRoutes || favoriteRoutes) && (
           <div className="map-page__status">Loading CTA routes…</div>
         )}
-        {routesError && <div className="map-page__status map-page__status--error">{routesError}</div>}
+        {routeListError && (
+          <div className="map-page__status map-page__status--error">{routeListError}</div>
+        )}
+        {routeShapesError && (
+          <div className="map-page__status map-page__status--error">{routeShapesError}</div>
+        )}
+        {vehiclesError && activeRouteIds.length > 0 && (
+          <div className="map-page__status map-page__status--error">{vehiclesError}</div>
+        )}
         {!isMenuOpen && (
           <button
             type="button"
@@ -487,6 +516,28 @@ const MapPage = () => {
               }}
             />
           ))}
+          {vehicles.map((vehicle) => {
+            const lat = Number(vehicle.latitude)
+            const lon = Number(vehicle.longitude)
+            if (Number.isNaN(lat) || Number.isNaN(lon)) return null
+            const position: LatLngTuple = [lat, lon]
+            const icon = getVehicleIcon(vehicle.route, vehicle.heading)
+            return (
+              <Marker key={vehicle.vehicleId} position={position} icon={icon}>
+                <Popup>
+                  <strong>Route {vehicle.route}</strong>
+                  <br />
+                  Vehicle: {vehicle.vehicleId}
+                  <br />
+                  Destination: {vehicle.destination || 'N/A'}
+                  <br />
+                  Heading: {vehicle.heading || '0'}°
+                  <br />
+                  Updated: {vehicle.timestamp}
+                </Popup>
+              </Marker>
+            )
+          })}
         </MapContainer>
         <button
           type="button"
