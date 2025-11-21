@@ -467,7 +467,12 @@ const MapPage = () => {
             <GeoJSON
               key={`active-${routeId}`}
               data={data}
-              style={{ color: routeColors[routeId] ?? '#2e7d32', weight: 4, opacity: 0.95 }}
+              style={{
+                color: routeColors[routeId] ?? '#2e7d32',
+                weight: 4,
+                opacity: 0.95,
+                className: `active-route active-route-${routeId}`,
+              }}
             />
           ))}
         </MapContainer>
