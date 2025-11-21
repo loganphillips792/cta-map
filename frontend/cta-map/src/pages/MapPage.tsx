@@ -56,6 +56,8 @@ const UserLocationMarker = ({ position }: { position: LatLngTuple }) => {
 
 type BusRouteFeatureCollection = FeatureCollection<LineString | MultiLineString>
 
+type RouteListItemWithColor = RouteListItem & { color?: string | null }
+
 const busRoutesKmzUrl = new URL('../../data/CTA_BusRoutes.kmz', import.meta.url).href
 
 const defaultToggleState: DisplayToggleState = {
@@ -146,9 +148,9 @@ const extractRouteNamesFromKml = (kmlDom: Document) => {
   return lookup
 }
 
-const makeRandomRouteColor = () => {
-  const hue = Math.floor(Math.random() * 360)
-  return `hsl(${hue}, 80%, 55%)`
+const makeRouteColorFromApi = (routeId: string, routes: RouteListItemWithColor[]) => {
+  const match = routes.find((r) => r.id === routeId)
+  return match?.color ?? '#2e7d32'
 }
 
 const MapPage = () => {
@@ -313,7 +315,7 @@ const MapPage = () => {
     }
   }, [activeRouteIds.length, allRoutes, favoriteRoutes, busRoutesData])
 
-  const routeSummaries = useMemo<RouteListItem[]>(() => {
+  const routeSummaries = useMemo<RouteListItemWithColor[]>(() => {
     const apiRoutes = routesQuery.data ?? []
     if (apiRoutes.length === 0) return []
 
@@ -321,6 +323,7 @@ const MapPage = () => {
       .map((route) => ({
         id: route.routeNumber,
         name: route.routeName ? `${route.routeNumber} - ${route.routeName}` : route.routeNumber,
+        color: route.routeColor,
       }))
       .sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }))
   }, [routesQuery.data])
@@ -374,7 +377,7 @@ const MapPage = () => {
       const activeSet = new Set(activeRouteIds)
       activeRouteIds.forEach((id) => {
         if (!next[id]) {
-          next[id] = makeRandomRouteColor()
+          next[id] = makeRouteColorFromApi(id, routeSummaries)
           changed = true
         }
       })
@@ -386,9 +389,8 @@ const MapPage = () => {
       })
       return changed ? next : prev
     })
-  }, [activeRouteIds])
+  }, [activeRouteIds, routeSummaries])
 
-  // if route's color is changed, integer degree changes or the component remounts, then create a new icon
   const getVehicleIcon = useCallback(
     (routeId: string, heading: string) => {
       const numericHeading = Number(heading)
