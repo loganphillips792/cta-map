@@ -141,6 +141,16 @@ type vehicle struct {
 	Zone            string `json:"zone"`
 }
 
+func isNoDataError(ctaErrors []ctaError) bool {
+	for _, err := range ctaErrors {
+		msg := strings.ToLower(err.Msg)
+		if strings.Contains(msg, "no data found") || strings.Contains(msg, "no service scheduled") {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *CTAService) GetRoutes(ctx context.Context) ([]route, error) {
 	if s.apiKey == "" {
 		return nil, newAPIError(http.StatusInternalServerError, fmt.Sprintf("%s is not set", apiKeyEnv), nil)
@@ -225,6 +235,9 @@ func (s *CTAService) GetVehicles(ctx context.Context, routes []string) ([]vehicl
 	}
 
 	if len(vehiclesResp.BustimeResponse.Error) > 0 {
+		if isNoDataError(vehiclesResp.BustimeResponse.Error) {
+			return []vehicle{}, nil
+		}
 		return nil, newAPIError(http.StatusBadGateway, "CTA API returned error", vehiclesResp.BustimeResponse)
 	}
 

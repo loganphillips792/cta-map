@@ -38,14 +38,8 @@ export const fetchRoutes = async (): Promise<ApiRoute[]> => {
 }
 
 export const fetchVehicles = async (routeIds: string[]): Promise<ApiVehicle[]> => {
-  const trimmed = routeIds
-    .map((rt) => rt.trim())
-    .filter(Boolean)
-    .slice(0, 10)
-
-  if (trimmed.length === 0) {
-    return []
-  }
+  const trimmed = routeIds.map((rt) => rt.trim()).filter(Boolean).slice(0, 10)
+  if (trimmed.length === 0) return []
 
   const params = new URLSearchParams({ rt: trimmed.join(',') })
   const response = await fetch(`${API_BASE_URL}/vehicles/locations?${params.toString()}`, {

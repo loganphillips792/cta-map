@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { LatLngBoundsExpression, LatLngTuple, Map as LeafletMap } from 'leaflet'
+import L, { type LatLngBoundsExpression, type LatLngTuple, type Map as LeafletMap } from 'leaflet'
 import {
   MapContainer,
   GeoJSON,
@@ -388,6 +388,25 @@ const MapPage = () => {
     })
   }, [activeRouteIds])
 
+  // if route's color is changed, integer degree changes or the component remounts, then create a new icon
+  const getVehicleIcon = useCallback(
+    (routeId: string, heading: string) => {
+      const numericHeading = Number(heading)
+      const headingValue = Number.isFinite(numericHeading) ? numericHeading : 0
+      const color = routeColors[routeId] ?? '#1e88e5'
+
+      return L.divIcon({
+        className: 'vehicle-icon',
+        html: `<div class="vehicle-icon__circle" style="background:${color};--heading:${headingValue}deg">
+                <span class="vehicle-icon__arrow">▲</span>
+               </div>`,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+      })
+    },
+    [routeColors],
+  )
+
   // Keep map position unless user explicitly chooses to center; avoid auto-flying on every selection change.
 
   return (
@@ -488,14 +507,17 @@ const MapPage = () => {
             const lon = Number(vehicle.longitude)
             if (Number.isNaN(lat) || Number.isNaN(lon)) return null
             const position: LatLngTuple = [lat, lon]
+            const icon = getVehicleIcon(vehicle.route, vehicle.heading)
             return (
-              <Marker key={vehicle.vehicleId} position={position}>
+              <Marker key={vehicle.vehicleId} position={position} icon={icon}>
                 <Popup>
                   <strong>Route {vehicle.route}</strong>
                   <br />
                   Vehicle: {vehicle.vehicleId}
                   <br />
                   Destination: {vehicle.destination || 'N/A'}
+                  <br />
+                  Heading: {vehicle.heading || '0'}°
                   <br />
                   Updated: {vehicle.timestamp}
                 </Popup>
