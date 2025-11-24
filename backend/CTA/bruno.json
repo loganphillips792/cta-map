@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "CTA-Map-Requests",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}
