@@ -40,6 +40,7 @@ func main() {
 	api := e.Group("/api")
 	api.GET("/routes", handlers.GetRoutes)
 	api.GET("/vehicles/locations", handlers.GetVehicleLocations)
+	api.GET("/vehicles/all", handlers.GetAllVehicleLocations)
 
 	port := os.Getenv("PORT")
 	if port == "" {

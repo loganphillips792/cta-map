@@ -30,6 +30,15 @@ func (h *Handlers) GetRoutes(c echo.Context) error {
 	return c.JSON(http.StatusOK, routes)
 }
 
+func (h *Handlers) GetAllVehicleLocations(c echo.Context) error {
+	vehicles, err := h.ctaService.GetAllVehicles(c.Request().Context())
+	if err != nil {
+		return writeError(c, err)
+	}
+
+	return c.JSON(http.StatusOK, vehicles)
+}
+
 func (h *Handlers) GetVehicleLocations(c echo.Context) error {
 	routeParam := strings.TrimSpace(c.QueryParam("rt"))
 	if routeParam == "" {

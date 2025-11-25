@@ -199,6 +199,35 @@ func (s *CTAService) GetRoutes(ctx context.Context) ([]route, error) {
 	return routes, nil
 }
 
+func (s *CTAService) GetAllVehicles(ctx context.Context) ([]vehicle, error) {
+	routes, err := s.GetRoutes(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	routeIDs := make([]string, len(routes))
+	for i, r := range routes {
+		routeIDs[i] = r.RouteNumber
+	}
+
+	allVehicles := make([]vehicle, 0)
+	batchSize := 10
+	for i := 0; i < len(routeIDs); i += batchSize {
+		end := i + batchSize
+		if end > len(routeIDs) {
+			end = len(routeIDs)
+		}
+		batch := routeIDs[i:end]
+		vehicles, err := s.GetVehicles(ctx, batch)
+		if err != nil {
+			return nil, err
+		}
+		allVehicles = append(allVehicles, vehicles...)
+	}
+
+	return allVehicles, nil
+}
+
 func (s *CTAService) GetVehicles(ctx context.Context, routes []string) ([]vehicle, error) {
 	if s.apiKey == "" {
 		return nil, newAPIError(http.StatusInternalServerError, fmt.Sprintf("%s is not set", apiKeyEnv), nil)
@@ -234,7 +263,10 @@ func (s *CTAService) GetVehicles(ctx context.Context, routes []string) ([]vehicl
 		return nil, newAPIError(http.StatusBadGateway, fmt.Sprintf("failed to decode CTA API response: %v", err), nil)
 	}
 
-	if len(vehiclesResp.BustimeResponse.Error) > 0 {
+	// The CTA API can return both vehicles AND errors in the same response
+	// (e.g., vehicles for routes with active buses, and "no data found" errors for routes without).
+	// Only treat it as an error if there are no vehicles AND the errors are not just "no data found".
+	if len(vehiclesResp.BustimeResponse.Vehicles) == 0 && len(vehiclesResp.BustimeResponse.Error) > 0 {
 		if isNoDataError(vehiclesResp.BustimeResponse.Error) {
 			return []vehicle{}, nil
 		}
