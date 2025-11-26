@@ -11,8 +11,10 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@tmcw/togeojson": "^7.1.2",
+    "@mantine/core": "^8.3.9",
+    "@mantine/hooks": "^8.3.9",
     "@tanstack/react-query": "^5.62.8",
+    "@tmcw/togeojson": "^7.1.2",
     "jszip": "^3.10.1",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.554.0",

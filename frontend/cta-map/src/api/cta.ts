@@ -51,3 +51,14 @@ export const fetchVehicles = async (routeIds: string[]): Promise<ApiVehicle[]> =
   }
   return response.json()
 }
+
+export const fetchAllVehicles = async (): Promise<ApiVehicle[]> => {
+  const response = await fetch(`${API_BASE_URL}/vehicles/all`, {
+    method: 'GET',
+    headers: jsonHeaders,
+  })
+  if (!response.ok) {
+    throw new Error(`Failed to load all vehicles (${response.status})`)
+  }
+  return response.json()
+}
