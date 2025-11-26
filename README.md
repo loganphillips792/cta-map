@@ -40,3 +40,4 @@ Run UI Tests:
 # TODO
 
 - Add playwright to pipeline
+- Add spans to be able to keep track of API calls in grafana
