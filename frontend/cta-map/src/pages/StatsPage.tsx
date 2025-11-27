@@ -1,14 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Table, TextInput, Paper, Text, Anchor, UnstyledButton, Badge, Group, Pagination, Button } from '@mantine/core'
-import { useRoutesQuery, useAllVehiclesQuery } from '../hooks/ctaQueries'
-
-type RouteStats = {
-  routeNumber: string
-  routeName: string
-  northEastbound: number
-  southWestbound: number
-  totalActive: number
-}
+import { useRouteStatsQuery } from '../hooks/ctaQueries'
 
 type SortField = 'routeNumber' | 'routeName' | 'totalActive'
 type SortDirection = 'asc' | 'desc'
@@ -21,8 +13,7 @@ const StatsPage = () => {
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
   const [page, setPage] = useState(1)
   const [showAllActive, setShowAllActive] = useState(false)
-  const routesQuery = useRoutesQuery()
-  const vehiclesQuery = useAllVehiclesQuery()
+  const statsQuery = useRouteStatsQuery()
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -39,46 +30,7 @@ const StatsPage = () => {
     setPage(1)
   }
 
-  const routes = routesQuery.data ?? []
-  const vehicles = vehiclesQuery.data ?? []
-
-  const routeStats = useMemo<RouteStats[]>(() => {
-    const routeMap = new Map<string, { name: string; north: number; south: number }>()
-
-    for (const route of routes) {
-      routeMap.set(route.routeNumber, { name: route.routeName, north: 0, south: 0 })
-    }
-
-    for (const vehicle of vehicles) {
-      const existing = routeMap.get(vehicle.route)
-      if (!existing) continue
-
-      const dest = vehicle.destination.toLowerCase()
-      const isNorthEast =
-        dest.includes('north') ||
-        dest.includes('east') ||
-        dest.includes('howard') ||
-        dest.includes('evanston') ||
-        dest.includes('loop') ||
-        dest.includes('downtown')
-
-      if (isNorthEast) {
-        existing.north++
-      } else {
-        existing.south++
-      }
-    }
-
-    return Array.from(routeMap.entries())
-      .map(([routeNumber, data]) => ({
-        routeNumber,
-        routeName: data.name,
-        northEastbound: data.north,
-        southWestbound: data.south,
-        totalActive: data.north + data.south,
-      }))
-      .sort((a, b) => a.routeNumber.localeCompare(b.routeNumber, undefined, { numeric: true }))
-  }, [routes, vehicles])
+  const routeStats = statsQuery.data ?? []
 
   const filteredStats = useMemo(() => {
     let result = routeStats
@@ -111,9 +63,9 @@ const StatsPage = () => {
     setNow(Date.now())
     const interval = setInterval(() => setNow(Date.now()), 15000)
     return () => clearInterval(interval)
-  }, [vehiclesQuery.dataUpdatedAt])
+  }, [statsQuery.dataUpdatedAt])
 
-  const lastUpdated = vehiclesQuery.dataUpdatedAt
+  const lastUpdated = statsQuery.dataUpdatedAt
   const secondsAgo = lastUpdated ? Math.max(0, Math.round((now - lastUpdated) / 1000)) : null
   const lastUpdatedText = (() => {
     if (secondsAgo === null) return 'Loading...'
@@ -150,10 +102,11 @@ const StatsPage = () => {
     </Table.Tr>
   ))
 
-  const activeRouteNumbers = useMemo(
-    () => routeStats.filter((r) => r.totalActive > 0).map((r) => r.routeNumber),
-    [routeStats]
-  )
+  const activeRouteNumbers = routeStats
+    .filter((route) => route.totalActive > 0)
+    .map((route) => route.routeNumber)
+
+  const totalBusesOnRoad = routeStats.reduce((sum, route) => sum + route.totalActive, 0)
 
   const ACTIVE_ROUTES_LIMIT = 10
   const displayedActiveRoutes = showAllActive
@@ -222,30 +175,38 @@ const StatsPage = () => {
           )}
         </Paper>
 
-        <Paper p="md" radius="md" withBorder className="stats-page__sidebar">
-          <Text fw={600} size="lg" mb="md">
-            {activeRouteNumbers.length} Routes Active Right Now
-          </Text>
-          <Group gap="xs">
-            {displayedActiveRoutes.map((routeNum) => (
-              <Badge key={routeNum} variant="outline" color="blue" size="lg">
-                #{routeNum}
-              </Badge>
-            ))}
-          </Group>
-          {hasMoreActiveRoutes && (
-            <Button
-              variant="subtle"
-              size="sm"
-              mt="md"
-              onClick={() => setShowAllActive((prev) => !prev)}
-            >
-              {showAllActive
-                ? 'Show less'
-                : `Show all ${activeRouteNumbers.length} routes`}
-            </Button>
-          )}
-        </Paper>
+        <div className="stats-page__sidebar">
+          <Paper p="md" radius="md" withBorder mb="md">
+            <Text fw={600} size="xl">
+              {totalBusesOnRoad.toLocaleString()} Buses on the Road
+            </Text>
+          </Paper>
+
+          <Paper p="md" radius="md" withBorder>
+            <Text fw={600} size="lg" mb="md">
+              {activeRouteNumbers.length} Routes Active Right Now
+            </Text>
+            <Group gap="xs">
+              {displayedActiveRoutes.map((routeNum) => (
+                <Badge key={routeNum} variant="outline" color="blue" size="lg">
+                  #{routeNum}
+                </Badge>
+              ))}
+            </Group>
+            {hasMoreActiveRoutes && (
+              <Button
+                variant="subtle"
+                size="sm"
+                mt="md"
+                onClick={() => setShowAllActive((prev) => !prev)}
+              >
+                {showAllActive
+                  ? 'Show less'
+                  : `Show all ${activeRouteNumbers.length} routes`}
+              </Button>
+            )}
+          </Paper>
+        </div>
       </div>
     </main>
   )

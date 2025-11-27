@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"os"
 
@@ -30,15 +31,20 @@ func main() {
 		}
 	}
 
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	apiKey := os.Getenv(apiKeyEnv)
 	client := &http.Client{Timeout: defaultHTTPTimeout}
-	ctaService := NewCTAService(apiKey, client)
-	handlers := NewHandlers(ctaService)
+	ctaService, err := NewCTAService(apiKey, client, logger)
+	if err != nil {
+		e.Logger.Fatalf("failed to create CTA service: %v", err)
+	}
+	handlers := NewHandlers(ctaService, logger)
 
 	e.GET("/", handlers.Health)
 
 	api := e.Group("/api")
 	api.GET("/routes", handlers.GetRoutes)
+	api.GET("/routes/stats", handlers.GetRouteStats)
 	api.GET("/vehicles/locations", handlers.GetVehicleLocations)
 	api.GET("/vehicles/all", handlers.GetAllVehicleLocations)
 

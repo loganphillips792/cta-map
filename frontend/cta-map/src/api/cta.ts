@@ -62,3 +62,22 @@ export const fetchAllVehicles = async (): Promise<ApiVehicle[]> => {
   }
   return response.json()
 }
+
+export type ApiRouteStats = {
+  routeNumber: string
+  routeName: string
+  northEastbound: number
+  southWestbound: number
+  totalActive: number
+}
+
+export const fetchRouteStats = async (): Promise<ApiRouteStats[]> => {
+  const response = await fetch(`${API_BASE_URL}/routes/stats`, {
+    method: 'GET',
+    headers: jsonHeaders,
+  })
+  if (!response.ok) {
+    throw new Error(`Failed to load route stats (${response.status})`)
+  }
+  return response.json()
+}

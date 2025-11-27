@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -11,10 +12,14 @@ const maxRouteParams = 10
 
 type Handlers struct {
 	ctaService *CTAService
+	logger     *slog.Logger
 }
 
-func NewHandlers(ctaService *CTAService) *Handlers {
-	return &Handlers{ctaService: ctaService}
+func NewHandlers(ctaService *CTAService, logger *slog.Logger) *Handlers {
+	if logger == nil {
+		logger = slog.Default()
+	}
+	return &Handlers{ctaService: ctaService, logger: logger}
 }
 
 func (h *Handlers) Health(c echo.Context) error {
@@ -22,6 +27,8 @@ func (h *Handlers) Health(c echo.Context) error {
 }
 
 func (h *Handlers) GetRoutes(c echo.Context) error {
+	h.logger.Info("request received", "method", c.Request().Method, "path", c.Path())
+
 	routes, err := h.ctaService.GetRoutes(c.Request().Context())
 	if err != nil {
 		return writeError(c, err)
@@ -31,6 +38,8 @@ func (h *Handlers) GetRoutes(c echo.Context) error {
 }
 
 func (h *Handlers) GetAllVehicleLocations(c echo.Context) error {
+	h.logger.Info("request received", "method", c.Request().Method, "path", c.Path())
+
 	vehicles, err := h.ctaService.GetAllVehicles(c.Request().Context())
 	if err != nil {
 		return writeError(c, err)
@@ -39,8 +48,22 @@ func (h *Handlers) GetAllVehicleLocations(c echo.Context) error {
 	return c.JSON(http.StatusOK, vehicles)
 }
 
+func (h *Handlers) GetRouteStats(c echo.Context) error {
+	h.logger.Info("request received", "method", c.Request().Method, "path", c.Path())
+
+	stats, err := h.ctaService.GetRouteStats(c.Request().Context())
+	if err != nil {
+		return writeError(c, err)
+	}
+
+	return c.JSON(http.StatusOK, stats)
+}
+
 func (h *Handlers) GetVehicleLocations(c echo.Context) error {
 	routeParam := strings.TrimSpace(c.QueryParam("rt"))
+
+	h.logger.Info("request received", "method", c.Request().Method, "path", c.Path(), "routes", routeParam)
+
 	if routeParam == "" {
 		return echo.NewHTTPError(http.StatusBadRequest, "query parameter 'rt' is required (comma-separated route designators)")
 	}
