@@ -166,7 +166,7 @@ const SideMenu = ({
           </div>
           <div>
             <p className="side-menu__eyebrow">Chicago</p>
-            <h1>CTA Map</h1>
+            <h1>Chicago - CTA Live</h1>
           </div>
         </header>
 
