@@ -81,3 +81,70 @@ export const fetchRouteStats = async (): Promise<ApiRouteStats[]> => {
   }
   return response.json()
 }
+
+// Ridership types
+export type YearlyTotal = {
+  year: number
+  rides: number
+}
+
+export type MonthlyTotal = {
+  year: number
+  month: number
+  rides: number
+}
+
+export const fetchRidershipYears = async (): Promise<number[]> => {
+  const response = await fetch(`${API_BASE_URL}/ridership/years`, {
+    method: 'GET',
+    headers: jsonHeaders,
+  })
+  if (!response.ok) {
+    throw new Error(`Failed to load ridership years (${response.status})`)
+  }
+  return response.json()
+}
+
+export const fetchRidershipYearly = async (): Promise<YearlyTotal[]> => {
+  const response = await fetch(`${API_BASE_URL}/ridership/yearly`, {
+    method: 'GET',
+    headers: jsonHeaders,
+  })
+  if (!response.ok) {
+    throw new Error(`Failed to load yearly ridership (${response.status})`)
+  }
+  return response.json()
+}
+
+export const fetchRidershipMonthly = async (year: number): Promise<MonthlyTotal[]> => {
+  const response = await fetch(`${API_BASE_URL}/ridership/monthly?year=${year}`, {
+    method: 'GET',
+    headers: jsonHeaders,
+  })
+  if (!response.ok) {
+    throw new Error(`Failed to load monthly ridership (${response.status})`)
+  }
+  return response.json()
+}
+
+export type DailyTotal = {
+  date: string
+  rides: number
+}
+
+export const fetchRidershipDaily = async (year?: number, month?: number): Promise<DailyTotal[]> => {
+  const params = new URLSearchParams()
+  if (year !== undefined) params.set('year', String(year))
+  if (month !== undefined) params.set('month', String(month))
+  const queryString = params.toString()
+  const url = queryString ? `${API_BASE_URL}/ridership/daily?${queryString}` : `${API_BASE_URL}/ridership/daily`
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: jsonHeaders,
+  })
+  if (!response.ok) {
+    throw new Error(`Failed to load daily ridership (${response.status})`)
+  }
+  return response.json()
+}

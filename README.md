@@ -37,6 +37,23 @@ Run UI Tests:
 
 [Open Data from the CTA - CTA](https://www.transitchicago.com/data/)
 
+## Bus Routes Daily total 
+
+[CTA - Ridership - Bus Routes - Daily Totals by Route | City of Chicago | Data Portal](https://data.cityofchicago.org/Transportation/CTA-Ridership-Bus-Routes-Daily-Totals-by-Route/jyb9-n7fm/about_data)
+
+1. Download CSV of the bus ridership by routes [here](https://data.cityofchicago.org/Transportation/CTA-Ridership-Bus-Routes-Daily-Totals-by-Route/jyb9-n7fm/about_data)
+
+2. Put CSV file in `data/` directory
+
+3. import data: `go run scripts/import_ridership_data.go data/<file_name>.csv`
+
+4. Test db import: `sqlite3 /Users/logan/repos/cta-map/backend/data/ridership.db "SELECT route, SUM(rides) as total_rides
+    FROM ridership WHERE year = 2023 GROUP BY route ORDER BY total_rides DESC LIMIT 5;"`
+
+
+5. `SELECT route, SUM(rides) as total_rides
+    FROM ridership WHERE year = 2023 GROUP BY route ORDER BY total_rides DESC LIMIT 5;`;
+
 # TODO
 
 - Add playwright to pipeline
