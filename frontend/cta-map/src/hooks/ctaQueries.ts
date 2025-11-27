@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { fetchRoutes, fetchVehicles, fetchAllVehicles, type ApiRoute, type ApiVehicle } from '../api/cta'
+import { fetchRoutes, fetchVehicles, fetchAllVehicles, fetchRouteStats, type ApiRoute, type ApiVehicle, type ApiRouteStats } from '../api/cta'
 
 export const useRoutesQuery = () =>
   useQuery<ApiRoute[]>({
@@ -25,4 +25,12 @@ export const useAllVehiclesQuery = () =>
     queryFn: fetchAllVehicles,
     refetchInterval: 5 * 60 * 1000,
     staleTime: 4 * 60 * 1000,
+  })
+
+export const useRouteStatsQuery = () =>
+  useQuery<ApiRouteStats[]>({
+    queryKey: ['routeStats'],
+    queryFn: fetchRouteStats,
+    refetchInterval: 60 * 1000,
+    staleTime: 30 * 1000,
   })
