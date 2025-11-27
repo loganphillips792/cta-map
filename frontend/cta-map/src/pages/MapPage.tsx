@@ -195,7 +195,7 @@ const MapPage = () => {
   const vehiclesError = vehiclesQuery.error instanceof Error ? vehiclesQuery.error.message : null
 
   useEffect(() => {
-    if (!navigator.geolocation) {
+    if (!navigator.geolocation || !displayToggles.location) {
       return
     }
 
@@ -210,7 +210,7 @@ const MapPage = () => {
     })
 
     return () => navigator.geolocation.clearWatch(watchId)
-  }, [])
+  }, [displayToggles.location])
 
   useEffect(() => {
     window.localStorage.setItem(TOGGLES_STORAGE_KEY, JSON.stringify(displayToggles))
