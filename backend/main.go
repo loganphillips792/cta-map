@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
@@ -40,6 +41,21 @@ func main() {
 	}
 	handlers := NewHandlers(ctaService, logger)
 
+	// Initialize ridership service
+	dbPath := os.Getenv("RIDERSHIP_DB_PATH")
+	if dbPath == "" {
+		dbPath = filepath.Join("data", "ridership.db")
+	}
+	ridershipRepo, err := NewDatabaseGatway(dbPath)
+	if err != nil {
+		e.Logger.Warnf("ridership database unavailable: %v", err)
+	}
+	var ridershipHandlers *RidershipHandlers
+	if ridershipRepo != nil {
+		ridershipService := NewRidershipService(ridershipRepo, logger)
+		ridershipHandlers = NewRidershipHandlers(ridershipService, logger)
+	}
+
 	e.GET("/", handlers.Health)
 
 	api := e.Group("/api")
@@ -47,6 +63,17 @@ func main() {
 	api.GET("/routes/stats", handlers.GetRouteStats)
 	api.GET("/vehicles/locations", handlers.GetVehicleLocations)
 	api.GET("/vehicles/all", handlers.GetAllVehicleLocations)
+
+	// Ridership endpoints
+	if ridershipHandlers != nil {
+		api.GET("/ridership/years", ridershipHandlers.GetAvailableYears)
+		api.GET("/ridership/yearly", ridershipHandlers.GetYearlyTotals)
+		api.GET("/ridership/monthly", ridershipHandlers.GetMonthlyTotals)
+		api.GET("/ridership/daily", ridershipHandlers.GetDailyTotals)
+		api.GET("/ridership/top-routes", ridershipHandlers.GetTopRoutes)
+		api.GET("/ridership/route/:route/yearly", ridershipHandlers.GetRouteYearly)
+		api.GET("/ridership/route/:route/daily", ridershipHandlers.GetRouteDaily)
+	}
 
 	port := os.Getenv("PORT")
 	if port == "" {

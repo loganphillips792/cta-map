@@ -405,3 +405,51 @@ func (s *CTAService) GetRouteStats(ctx context.Context) ([]routeStats, error) {
 	s.logger.Info("successfully calculated route stats", "routes", len(result), "totalVehicles", len(vehicles))
 	return result, nil
 }
+
+// RidershipService provides business logic for ridership data
+type RidershipService struct {
+	repo   *DatabaseGatway
+	logger *slog.Logger
+}
+
+func NewRidershipService(repo *DatabaseGatway, logger *slog.Logger) *RidershipService {
+	if logger == nil {
+		logger = slog.Default()
+	}
+	return &RidershipService{repo: repo, logger: logger}
+}
+
+func (s *RidershipService) GetYearlyTotals() ([]YearlyTotal, error) {
+	s.logger.Info("fetching yearly totals")
+	return s.repo.GetYearlyTotals()
+}
+
+func (s *RidershipService) GetMonthlyTotals(year int) ([]MonthlyTotal, error) {
+	s.logger.Info("fetching monthly totals", "year", year)
+	return s.repo.GetMonthlyTotals(year)
+}
+
+func (s *RidershipService) GetTopRoutes(year int, limit int) ([]TopRoute, error) {
+	s.logger.Info("fetching top routes", "year", year, "limit", limit)
+	return s.repo.GetTopRoutes(year, limit)
+}
+
+func (s *RidershipService) GetRouteYearlyTotals(route string) ([]RouteYearlyTotal, error) {
+	s.logger.Info("fetching route yearly totals", "route", route)
+	return s.repo.GetRouteYearlyTotals(route)
+}
+
+func (s *RidershipService) GetRouteDaily(route string, year *int) ([]DailyRidership, error) {
+	s.logger.Info("fetching route daily data", "route", route, "year", year)
+	return s.repo.GetRouteDaily(route, year)
+}
+
+func (s *RidershipService) GetAvailableYears() ([]int, error) {
+	s.logger.Info("fetching available years")
+	return s.repo.GetAvailableYears()
+}
+
+func (s *RidershipService) GetDailyTotals(year *int, month *int) ([]DailyTotal, error) {
+	s.logger.Info("fetching daily totals", "year", year, "month", month)
+	return s.repo.GetDailyTotals(year, month)
+}

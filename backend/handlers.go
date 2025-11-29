@@ -3,6 +3,7 @@ package main
 import (
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -101,4 +102,175 @@ func writeError(c echo.Context, err error) error {
 	}
 
 	return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+}
+
+// RidershipHandlers handles HTTP requests for ridership data
+type RidershipHandlers struct {
+	service *RidershipService
+	logger  *slog.Logger
+}
+
+func NewRidershipHandlers(service *RidershipService, logger *slog.Logger) *RidershipHandlers {
+	if logger == nil {
+		logger = slog.Default()
+	}
+	return &RidershipHandlers{service: service, logger: logger}
+}
+
+// GetYearlyTotals handles GET /api/ridership/yearly
+func (h *RidershipHandlers) GetYearlyTotals(c echo.Context) error {
+	h.logger.Info("request received", "method", c.Request().Method, "path", c.Path())
+
+	totals, err := h.service.GetYearlyTotals()
+	if err != nil {
+		h.logger.Error("failed to get yearly totals", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, totals)
+}
+
+// GetMonthlyTotals handles GET /api/ridership/monthly?year=2023
+func (h *RidershipHandlers) GetMonthlyTotals(c echo.Context) error {
+	h.logger.Info("request received", "method", c.Request().Method, "path", c.Path())
+
+	yearStr := c.QueryParam("year")
+	if yearStr == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "year parameter is required")
+	}
+
+	year, err := strconv.Atoi(yearStr)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid year parameter")
+	}
+
+	totals, err := h.service.GetMonthlyTotals(year)
+	if err != nil {
+		h.logger.Error("failed to get monthly totals", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, totals)
+}
+
+// GetTopRoutes handles GET /api/ridership/top-routes?year=2023&limit=10
+func (h *RidershipHandlers) GetTopRoutes(c echo.Context) error {
+	h.logger.Info("request received", "method", c.Request().Method, "path", c.Path())
+
+	yearStr := c.QueryParam("year")
+	if yearStr == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "year parameter is required")
+	}
+
+	year, err := strconv.Atoi(yearStr)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid year parameter")
+	}
+
+	limit := 10
+	if limitStr := c.QueryParam("limit"); limitStr != "" {
+		limit, err = strconv.Atoi(limitStr)
+		if err != nil || limit < 1 || limit > 100 {
+			return echo.NewHTTPError(http.StatusBadRequest, "limit must be between 1 and 100")
+		}
+	}
+
+	routes, err := h.service.GetTopRoutes(year, limit)
+	if err != nil {
+		h.logger.Error("failed to get top routes", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, routes)
+}
+
+// GetRouteYearly handles GET /api/ridership/route/:route/yearly
+func (h *RidershipHandlers) GetRouteYearly(c echo.Context) error {
+	h.logger.Info("request received", "method", c.Request().Method, "path", c.Path())
+
+	route := c.Param("route")
+	if route == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "route parameter is required")
+	}
+
+	totals, err := h.service.GetRouteYearlyTotals(route)
+	if err != nil {
+		h.logger.Error("failed to get route yearly totals", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, totals)
+}
+
+// GetRouteDaily handles GET /api/ridership/route/:route/daily?year=2023
+func (h *RidershipHandlers) GetRouteDaily(c echo.Context) error {
+	h.logger.Info("request received", "method", c.Request().Method, "path", c.Path())
+
+	route := c.Param("route")
+	if route == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "route parameter is required")
+	}
+
+	var year *int
+	if yearStr := c.QueryParam("year"); yearStr != "" {
+		y, err := strconv.Atoi(yearStr)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, "invalid year parameter")
+		}
+		year = &y
+	}
+
+	data, err := h.service.GetRouteDaily(route, year)
+	if err != nil {
+		h.logger.Error("failed to get route daily data", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, data)
+}
+
+// GetAvailableYears handles GET /api/ridership/years
+func (h *RidershipHandlers) GetAvailableYears(c echo.Context) error {
+	h.logger.Info("request received", "method", c.Request().Method, "path", c.Path())
+
+	years, err := h.service.GetAvailableYears()
+	if err != nil {
+		h.logger.Error("failed to get available years", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, years)
+}
+
+// GetDailyTotals handles GET /api/ridership/daily?year=2023&month=6
+// Both year and month are optional. If not provided, returns all daily data.
+func (h *RidershipHandlers) GetDailyTotals(c echo.Context) error {
+	h.logger.Info("request received", "method", c.Request().Method, "path", c.Path())
+
+	var year *int
+	var month *int
+
+	if yearStr := c.QueryParam("year"); yearStr != "" {
+		y, err := strconv.Atoi(yearStr)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, "invalid year parameter")
+		}
+		year = &y
+	}
+
+	if monthStr := c.QueryParam("month"); monthStr != "" {
+		m, err := strconv.Atoi(monthStr)
+		if err != nil || m < 1 || m > 12 {
+			return echo.NewHTTPError(http.StatusBadRequest, "invalid month parameter (must be 1-12)")
+		}
+		month = &m
+	}
+
+	totals, err := h.service.GetDailyTotals(year, month)
+	if err != nil {
+		h.logger.Error("failed to get daily totals", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, totals)
 }
