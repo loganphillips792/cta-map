@@ -1,9 +1,32 @@
-node_modules
-cta-map/node_modules
-cta-map/dist
+# Git
 .git
-.github
+.gitignore
+
+# Node
+**/node_modules
+frontend/cta-map/dist
+
+# Go
+backend/cta-backend
+
+# IDE
+.idea
 .vscode
+*.swp
+*.swo
+
+# Environment files
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Test artifacts
+**/test-results
+**/playwright-report
+
+# macOS
+.DS_Store
+
+# Logs
 npm-debug.log
 yarn-error.log
-.DS_Store
