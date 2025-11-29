@@ -2,13 +2,25 @@ import { kml as kmlToGeoJSON } from "@tmcw/togeojson";
 import type { Feature, FeatureCollection, Geometry, LineString, MultiLineString } from "geojson";
 import JSZip from "jszip";
 import L, { type LatLngBoundsExpression, type LatLngTuple, type Map as LeafletMap } from "leaflet";
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
 import "leaflet/dist/leaflet.css";
 import { Navigation, PanelLeftOpen } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GeoJSON, MapContainer, Marker, Popup, Rectangle, TileLayer, useMap } from "react-leaflet";
 import SideMenu, { type DisplayToggleId, type DisplayToggleState, type RouteListItem } from "../components/SideMenu";
+
 import { ACTIVE_ROUTES_STORAGE_KEY, FAVORITES_STORAGE_KEY, TOGGLES_STORAGE_KEY } from "../constants/storageKeys";
 import { useRoutesQuery, useVehiclesQuery } from "../hooks/ctaQueries";
+
+// Fix Leaflet default marker icons not loading with bundlers
+delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
+L.Icon.Default.mergeOptions({
+    iconUrl: markerIcon,
+    iconRetinaUrl: markerIcon2x,
+    shadowUrl: markerShadow,
+});
 
 const chicago = { lat: 41.8781, lng: -87.6298 };
 const chicagoBounds: LatLngBoundsExpression = [
@@ -96,24 +108,6 @@ const decodeHtmlEntities = (value: string) => {
     const textarea = document.createElement("textarea");
     textarea.innerHTML = value;
     return textarea.value;
-};
-
-const getRouteNameFromFeature = (feature: Feature<Geometry | null>): string | null => {
-    const props = feature.properties as Record<string, unknown> | null | undefined;
-    if (!props) return null;
-    const candidates = [props.routeName, props.NAME, props.title];
-    for (const candidate of candidates) {
-        if (typeof candidate === "string" && candidate.trim()) {
-            return candidate.trim();
-        }
-    }
-    const description = typeof props.description === "string" ? props.description : null;
-    if (!description) return null;
-    const match = description.match(routeNameCellRegex);
-    if (!match?.[1]) return null;
-    const cleaned = stripHtmlTags(match[1]).trim();
-    if (!cleaned) return null;
-    return decodeHtmlEntities(cleaned);
 };
 
 const extractRouteNamesFromKml = (kmlDom: Document) => {

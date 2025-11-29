@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
@@ -73,6 +74,24 @@ func main() {
 		api.GET("/ridership/top-routes", ridershipHandlers.GetTopRoutes)
 		api.GET("/ridership/route/:route/yearly", ridershipHandlers.GetRouteYearly)
 		api.GET("/ridership/route/:route/daily", ridershipHandlers.GetRouteDaily)
+	}
+
+	// Serve static frontend files if the directory exists
+	staticDir := os.Getenv("STATIC_DIR")
+	if staticDir == "" {
+		staticDir = "static"
+	}
+	if _, err := os.Stat(staticDir); err == nil {
+		e.Use(middleware.StaticWithConfig(middleware.StaticConfig{
+			Root:   staticDir,
+			Index:  "index.html",
+			HTML5:  true,
+			Browse: false,
+			Skipper: func(c echo.Context) bool {
+				// Skip static file serving for API routes
+				return strings.HasPrefix(c.Path(), "/api")
+			},
+		}))
 	}
 
 	port := os.Getenv("PORT")

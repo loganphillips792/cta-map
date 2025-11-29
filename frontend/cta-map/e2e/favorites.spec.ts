@@ -8,7 +8,7 @@ const favoriteToggle = (page: Page, routeId: string) =>
 
 const waitForMapPage = async (page: Page) => {
   await page.goto('/map')
-  await expect(page.getByRole('heading', { name: 'CTA Map' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Chicago - CTA Live' })).toBeVisible()
   await expect(page.getByTestId('all-routes-list')).toBeVisible()
 }
 

@@ -11,20 +11,15 @@
 
 ## Docker usage
 
-Build the production container image from the repo root:
 
-```bash
-docker build -t cta-map -f Docker/Dockerfile .
-```
+1. `docker build --build-arg VITE_JAWG_ACCESS_TOKEN=your_token -t cta-map . && docker run -p 8080:8080 -e CTA_API_KEY=your_key -v ./backend/data:/app/data:ro cta-map`
 
-Then run it locally and expose the app on port 8080:
+2. seed database: `go run scripts/import_ridership_data.go data/<file_name>.csv`
 
-```bash
-docker run --rm -p 8080:80 cta-map
-```
+3. Visit `http://localhost:8080` to verify the Vite build is being served by nginx from the Docker image
 
-Visit `http://localhost:8080` to verify the Vite build is being served by nginx from the Docker image.
 
+- if using docker-compose: `docker compose up --build -d`
 
 Run UI Tests:
 
