@@ -2,14 +2,13 @@ services:
   cta-map:
     build:
       context: .
-      args:
-        - VITE_JAWG_ACCESS_TOKEN=${VITE_JAWG_ACCESS_TOKEN}
     ports:
       - "8080:8080"
     env_file:
       - compose.env
     environment:
       - PORT=8080
+      - JAWG_ACCESS_TOKEN=${JAWG_ACCESS_TOKEN}
     volumes:
       # Mount ridership database from host (optional, for persistence)
       - ./backend/data:/app/data:ro

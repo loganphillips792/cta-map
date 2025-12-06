@@ -1,4 +1,26 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
+
+// Client configuration from backend
+export type ClientConfig = {
+    jawgAccessToken?: string;
+};
+
+let cachedConfig: ClientConfig | null = null;
+
+export const fetchConfig = async (): Promise<ClientConfig> => {
+    if (cachedConfig) {
+        return cachedConfig;
+    }
+    const response = await fetch(`${API_BASE_URL}/config`, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+    });
+    if (!response.ok) {
+        throw new Error(`Failed to load config (${response.status})`);
+    }
+    cachedConfig = await response.json();
+    return cachedConfig!;
+};
 
 export type ApiRoute = {
     routeNumber: string;

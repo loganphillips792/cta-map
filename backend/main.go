@@ -59,7 +59,12 @@ func main() {
 
 	e.GET("/", handlers.Health)
 
+	// Config endpoint for frontend runtime configuration
+	jawgToken := os.Getenv("JAWG_ACCESS_TOKEN")
+	configHandlers := NewConfigHandlers(jawgToken)
+
 	api := e.Group("/api")
+	api.GET("/config", configHandlers.GetConfig)
 	api.GET("/routes", handlers.GetRoutes)
 	api.GET("/routes/stats", handlers.GetRouteStats)
 	api.GET("/vehicles/locations", handlers.GetVehicleLocations)

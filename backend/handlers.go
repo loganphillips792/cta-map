@@ -27,6 +27,28 @@ func (h *Handlers) Health(c echo.Context) error {
 	return c.String(http.StatusOK, "CTA backend is running")
 }
 
+// ConfigHandlers handles configuration endpoints
+type ConfigHandlers struct {
+	jawgAccessToken string
+}
+
+func NewConfigHandlers(jawgAccessToken string) *ConfigHandlers {
+	return &ConfigHandlers{jawgAccessToken: jawgAccessToken}
+}
+
+// ClientConfig represents the configuration sent to the frontend
+type ClientConfig struct {
+	JawgAccessToken string `json:"jawgAccessToken,omitempty"`
+}
+
+// GetConfig handles GET /api/config
+func (h *ConfigHandlers) GetConfig(c echo.Context) error {
+	config := ClientConfig{
+		JawgAccessToken: h.jawgAccessToken,
+	}
+	return c.JSON(http.StatusOK, config)
+}
+
 func (h *Handlers) GetRoutes(c echo.Context) error {
 	h.logger.Info("request received", "method", c.Request().Method, "path", c.Path())
 
