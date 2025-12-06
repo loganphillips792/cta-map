@@ -25,7 +25,7 @@ go build             # Build the binary
 ### Environment Variables
 - `CTA_API_KEY` - Required for backend to call CTA Bus Tracker API
 - `JAWG_ACCESS_TOKEN` - Backend env var for Jawg map tiles (served to frontend via `/api/config`)
-- `VITE_API_BASE_URL` - Frontend API base URL (defaults to `/api`)
+- `VITE_API_BASE_URL` - Frontend API base URL for local dev only (defaults to `/api`)
 - `RIDERSHIP_DB_PATH` - Path to SQLite ridership database (defaults to `data/ridership.db`)
 
 ## Architecture
