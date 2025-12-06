@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import {
     fetchAllVehicles,
+    fetchConfig,
     fetchRidershipDaily,
     fetchRidershipMonthly,
     fetchRidershipYearly,
@@ -11,10 +12,18 @@ import {
     type ApiRoute,
     type ApiRouteStats,
     type ApiVehicle,
+    type ClientConfig,
     type DailyTotal,
     type MonthlyTotal,
     type YearlyTotal,
 } from "../api/cta";
+
+export const useConfigQuery = () =>
+    useQuery<ClientConfig>({
+        queryKey: ["config"],
+        queryFn: fetchConfig,
+        staleTime: Infinity, // Config doesn't change during session
+    });
 
 export const useRoutesQuery = () =>
     useQuery<ApiRoute[]>({

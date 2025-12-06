@@ -2,9 +2,6 @@
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app
 
-ARG VITE_JAWG_ACCESS_TOKEN
-ENV VITE_JAWG_ACCESS_TOKEN=$VITE_JAWG_ACCESS_TOKEN
-
 COPY frontend/cta-map/package*.json ./
 RUN npm ci
 COPY frontend/cta-map/ .

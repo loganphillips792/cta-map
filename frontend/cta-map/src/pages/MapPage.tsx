@@ -12,7 +12,7 @@ import { GeoJSON, MapContainer, Marker, Popup, Rectangle, TileLayer, useMap } fr
 import SideMenu, { type DisplayToggleId, type DisplayToggleState, type RouteListItem } from "../components/SideMenu";
 
 import { ACTIVE_ROUTES_STORAGE_KEY, FAVORITES_STORAGE_KEY, TOGGLES_STORAGE_KEY } from "../constants/storageKeys";
-import { useRoutesQuery, useVehiclesQuery } from "../hooks/ctaQueries";
+import { useConfigQuery, useRoutesQuery, useVehiclesQuery } from "../hooks/ctaQueries";
 
 // Fix Leaflet default marker icons not loading with bundlers
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
@@ -28,7 +28,6 @@ const chicagoBounds: LatLngBoundsExpression = [
     [42.05, -87.45],
 ];
 
-const jawgAccessToken = import.meta.env.VITE_JAWG_ACCESS_TOKEN;
 
 const ChicagoBoundsLock = () => {
     const map = useMap();
@@ -134,6 +133,8 @@ const makeRouteColorFromApi = (routeId: string, routes: RouteListItemWithColor[]
 };
 
 const MapPage = () => {
+    const configQuery = useConfigQuery();
+    const jawgAccessToken = configQuery.data?.jawgAccessToken;
     const [userPosition, setUserPosition] = useState<LatLngTuple | null>(null);
     const [isMenuOpen, setIsMenuOpen] = useState(true);
     const mapRef = useRef<LeafletMap | null>(null);
