@@ -34,9 +34,19 @@ func main() {
 	}
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+
+	apiTrackerDBPath := os.Getenv("API_TRACKER_DB_PATH")
+	if apiTrackerDBPath == "" {
+		apiTrackerDBPath = filepath.Join("data", "api_tracker.db")
+	}
+	apiTracker, err := NewAPICallTracker(apiTrackerDBPath)
+	if err != nil {
+		e.Logger.Warnf("API tracker database unavailable: %v", err)
+	}
+
 	apiKey := os.Getenv(apiKeyEnv)
 	client := &http.Client{Timeout: defaultHTTPTimeout}
-	ctaService, err := NewCTAService(apiKey, client, logger)
+	ctaService, err := NewCTAService(apiKey, client, logger, apiTracker)
 	if err != nil {
 		e.Logger.Fatalf("failed to create CTA service: %v", err)
 	}
@@ -79,6 +89,11 @@ func main() {
 		api.GET("/ridership/top-routes", ridershipHandlers.GetTopRoutes)
 		api.GET("/ridership/route/:route/yearly", ridershipHandlers.GetRouteYearly)
 		api.GET("/ridership/route/:route/daily", ridershipHandlers.GetRouteDaily)
+	}
+
+	if apiTracker != nil {
+		trackerHandlers := NewAPITrackerHandlers(apiTracker, logger)
+		api.GET("/tracking/counts", trackerHandlers.GetAPICallCounts)
 	}
 
 	// Serve static frontend files if the directory exists

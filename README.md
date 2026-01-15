@@ -7,7 +7,7 @@
 3. `npm run dev`
 4. `cd backend`
 5. add CTA_API_KEY to .env file
-6. `npm run dev`
+6. `go run .`
 
 ## Docker usage
 

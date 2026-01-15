@@ -10,5 +10,5 @@ services:
       - PORT=8080
       - JAWG_ACCESS_TOKEN=${JAWG_ACCESS_TOKEN}
     volumes:
-      # Mount ridership database from host (optional, for persistence)
-      - ./backend/data:/app/data:ro
+      # Mount data directory from host (read-write for API tracker db)
+      - ./backend/data:/app/data

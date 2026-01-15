@@ -27,6 +27,7 @@ go build             # Build the binary
 - `JAWG_ACCESS_TOKEN` - Backend env var for Jawg map tiles (served to frontend via `/api/config`)
 - `VITE_API_BASE_URL` - Frontend API base URL for local dev only (defaults to `/api`)
 - `RIDERSHIP_DB_PATH` - Path to SQLite ridership database (defaults to `data/ridership.db`)
+- `API_TRACKER_DB_PATH` - Path to SQLite database for tracking CTA API calls (defaults to `data/api_tracker.db`)
 
 ## Architecture
 
@@ -44,6 +45,7 @@ API endpoints:
 - `/api/vehicles/all` - All active vehicles
 - `/api/routes/stats` - Vehicle counts by route and direction
 - `/api/ridership/*` - Historical ridership data endpoints
+- `/api/tracking/counts` - CTA API call counts (total, today, by endpoint)
 
 ### Frontend (React + TypeScript + Vite)
 - `src/api/cta.ts` - API client functions and types

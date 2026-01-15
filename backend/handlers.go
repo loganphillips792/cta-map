@@ -296,3 +296,50 @@ func (h *RidershipHandlers) GetDailyTotals(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, totals)
 }
+
+type APITrackerHandlers struct {
+	tracker *APICallTracker
+	logger  *slog.Logger
+}
+
+func NewAPITrackerHandlers(tracker *APICallTracker, logger *slog.Logger) *APITrackerHandlers {
+	if logger == nil {
+		logger = slog.Default()
+	}
+	return &APITrackerHandlers{tracker: tracker, logger: logger}
+}
+
+type APICallCountResponse struct {
+	Total      int64            `json:"total"`
+	Today      int64            `json:"today"`
+	ByEndpoint map[string]int64 `json:"byEndpoint"`
+}
+
+// GetAPICallCounts handles GET /api/tracking/counts
+func (h *APITrackerHandlers) GetAPICallCounts(c echo.Context) error {
+	h.logger.Info("request received", "method", c.Request().Method, "path", c.Path())
+
+	total, err := h.tracker.GetTotalCount()
+	if err != nil {
+		h.logger.Error("failed to get total count", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	today, err := h.tracker.GetCountToday()
+	if err != nil {
+		h.logger.Error("failed to get today count", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	byEndpoint, err := h.tracker.GetCountByEndpoint()
+	if err != nil {
+		h.logger.Error("failed to get count by endpoint", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, APICallCountResponse{
+		Total:      total,
+		Today:      today,
+		ByEndpoint: byEndpoint,
+	})
+}
