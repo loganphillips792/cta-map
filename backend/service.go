@@ -42,12 +42,13 @@ func newAPIError(status int, message string, payload interface{}) *apiError {
 }
 
 type CTAService struct {
-	apiKey string
-	client *http.Client
-	logger *slog.Logger
+	apiKey  string
+	client  *http.Client
+	logger  *slog.Logger
+	tracker *APICallTracker
 }
 
-func NewCTAService(apiKey string, client *http.Client, logger *slog.Logger) (*CTAService, error) {
+func NewCTAService(apiKey string, client *http.Client, logger *slog.Logger, tracker *APICallTracker) (*CTAService, error) {
 	if apiKey == "" {
 		return nil, fmt.Errorf("%s is not set", apiKeyEnv)
 	}
@@ -58,9 +59,10 @@ func NewCTAService(apiKey string, client *http.Client, logger *slog.Logger) (*CT
 		logger = slog.Default()
 	}
 	return &CTAService{
-		apiKey: apiKey,
-		client: client,
-		logger: logger,
+		apiKey:  apiKey,
+		client:  client,
+		logger:  logger,
+		tracker: tracker,
 	}, nil
 }
 
@@ -221,6 +223,11 @@ func (s *CTAService) GetRoutes(ctx context.Context) ([]route, error) {
 	}
 
 	s.logger.Info("successfully fetched routes", "count", len(routes))
+	if s.tracker != nil {
+		if err := s.tracker.TrackCall(ctaGetRoutesURL); err != nil {
+			s.logger.Error("failed to track API call", "error", err)
+		}
+	}
 	return routes, nil
 }
 
@@ -328,6 +335,11 @@ func (s *CTAService) GetVehicles(ctx context.Context, routes []string) ([]vehicl
 	}
 
 	s.logger.Info("successfully fetched vehicles", "routes", routes, "count", len(vehicles))
+	if s.tracker != nil {
+		if err := s.tracker.TrackCall(ctaGetVehiclesURL); err != nil {
+			s.logger.Error("failed to track API call", "error", err)
+		}
+	}
 	return vehicles, nil
 }
 
